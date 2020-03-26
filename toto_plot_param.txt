@@ -1,0 +1,20 @@
+file_name: "toto.dat"
+file_format: "ascii_cols"
+file_col_x: 1
+file_col_y: 2
+file_plot_style: "92,Red"
+
+axis_type: "linear"
+#axis_limits: "-0.2 +0.2 -13 +13"
+
+xlabel: "\Delta \\rho _{(O-C)} (arcsec)" 
+ylabel: "\Delta \\theta _{(O-C)} (deg.)" 
+
+# Upper case for TeX:
+# plot_device: "&square"
+plot_device: "&square"
+
+# jlp_axes, xgrid, ygrid, xlog, ylog, expand
+#axis_settings: "jlp_axes,xgrid,ygrid,xlog,ylog" 
+axis_settings: "xgrid" 
+font_size_expand: 1.4

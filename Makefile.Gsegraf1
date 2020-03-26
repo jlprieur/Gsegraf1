@@ -1,0 +1,158 @@
+##################################################################
+# Makefile for Gsegraf1 program 
+#
+# JLP
+# Version 07-01-2015
+##################################################################
+
+# To check it, type "echo %OS%" on Windows command terminal
+ifeq ($(OS),Windows_NT)
+JLP_SYSTEM=Windows
+else
+JLP_SYSTEM=Linux
+endif
+
+##############################################################
+# Linux CENTOS6:
+##############################################################
+ifeq ($(JLP_SYSTEM),Linux)
+
+CPP=c++
+
+JLPLIB_DIR = $(JLPSRC)/jlplib
+CFITSIO_INCL_DIR=$(JLPLIB_DIR)/cfitsio/incl
+
+CXFLAGS = `wx-config --cppflags` $(MY_INCL) -DLINUX
+
+mylib=$(JLPLIB)/jlp
+MATHLIB = $(JLPLIB)/jlp/jlp_numeric.a $(JLPLIB)/math/libfftw3.a
+
+GSEG_LIB = $(mylib)$(PATHSEP)jlp_gseg_wxwid.a \
+	$(mylib)$(PATHSEP)jlp_gsegraf.a \
+	$(mylib)$(PATHSEP)jlp_gseg_wxwid.a
+
+PATHSEP1=/
+
+
+#WX_LIB = -L/usr/local/lib -pthread   -lwx_baseu-2.9 -lwx_gtk2u_core-2.9
+WX_LIB := `wx-config --libs base,core`
+
+else
+##############################################################
+# Windows operating system:
+##############################################################
+
+CPP=c++
+
+# To avoid console apparition:
+NO_CONSOLE=-mwindows
+
+# C++ flags to use with wxWidgets code
+WX_INCLUDE_DIR= C:\\wxWidgets-3.0.2\\include
+
+# Windows: I add USE_XPM (USE_XPM is needed to have the icon)
+CXFLAGS = -DUSE_XPM -I$(WX_INCLUDE_DIR) $(MY_INCL)
+
+# Need two back slashes for Linux compatibility:
+PATHSEP1=\\
+
+JLPLIB_DIR = c:\\jlplib
+CFITSIO_INCL_DIR=$(JLPLIB_DIR)\\cfitsio\\incl
+
+EXEC=c:\\EXEC
+
+mylib=c:\\EXEC\\MyLib
+MATHLIB = $(mylib)$(PATHSEP)jlp_numeric.a $(mylib)$(PATHSEP)libfftw3.a
+GSEG_LIB = $(mylib)$(PATHSEP)jlp_gseg_wxwid.a \
+  $(mylib)$(PATHSEP)jlp_gsegraf.a
+WX_LIB_DIR= C:\\wxWidgets-3.0.2\\lib\\gcc_dll
+
+WX_LIB = -L$(WX_LIB_DIR) -lwxbase30u -lwxmsw30u_core
+
+endif
+
+#Remove extra blank before $(PATHSEP1):
+PATHSEP=$(strip $(PATHSEP1))
+
+EXEC_DIR = $(EXEC)$(PATHSEP)
+
+MY_INCL=-I. -I$(JLPLIB_DIR)$(PATHSEP)jlp_splot  \
+        -I$(JLPLIB_DIR)$(PATHSEP)jlp_fits \
+        -I$(JLPLIB_DIR)$(PATHSEP)jlp_wxplot$(PATHSEP)jlp_wxplot_include \
+        -I$(JLPLIB_DIR)$(PATHSEP)jlp_numeric \
+        -I$(JLPLIB_DIR)$(PATHSEP)jlp_gsegraf$(PATHSEP)jlp_gsegraf_include \
+        -I$(JLPLIB_DIR)$(PATHSEP)jlp_gnome \
+        -I$(JLPLIB_DIR)$(PATHSEP)jlp_gseg_wxwid \
+        -I$(CFITSIO_INCL_DIR)
+
+FITSLIB=$(mylib)$(PATHSEP)jlp_fits.a $(mylib)$(PATHSEP)libcfitsio.a
+MY_LIB= $(GSEG_LIB) \
+	$(mylib)$(PATHSEP)jlp_wxplot.a \
+	$(mylib)$(PATHSEP)jlp_splot_idv.a \
+	$(mylib)$(PATHSEP)jlp_splot.a \
+	$(mylib)$(PATHSEP)jlp_splot_idv.a \
+	$(GSEG_LIB) \
+	$(MATHLIB) $(FITSLIB) -lm
+
+# To avoid console apparition:
+NO_CONSOLE=-mwindows 
+
+GD_OBJ = gseg_frame_logbook.o gseg_frame_menu.o gsegraf1_menu.o
+
+GD_SRC = $(GD_OBJ)(.o:.c)
+ 
+GD_DEP = gseg_frame.h 
+
+.SUFFIXES:
+.SUFFIXES: .o .cpp .exe $(SUFFIXES) 
+
+.cpp.o:
+	$(CPP) -c -g $(CXFLAGS) $*.cpp
+
+.o.exe:
+	$(CPP) -o $(EXEC)/$*.exe $*.o $(GD_OBJ) $(MY_LIB) $(WX_LIB)
+
+.cpp.exe:
+	$(CPP) -c -g $(CXFLAGS) $*.cpp
+	$(CPP) -o $(EXEC)/$*.exe $*.o $(GD_OBJ) $(MY_LIB) $(WX_LIB)
+
+### Targets: ###
+
+all: $(GD_OBJ) Gsegraf1.o Gsegraf1.exe
+
+Gsegraf1.o: Gsegraf1.cpp
+
+gseg_panel.o: gseg_panel.cpp  $(GD_DEP)
+
+gseg_plot.o: gseg_plot.cpp  $(GD_DEP)
+
+gseg_frame_logbook.o : gseg_frame_logbook.cpp
+
+gseg_frame_menu.o : gseg_frame_menu.cpp
+
+gsegraf1_menu.o : gsegraf1_menu.cpp
+
+########################################################
+# Linux:
+ifeq ($(JLP_SYSTEM),Linux)
+
+Gsegraf1.exe: Gsegraf1.cpp  $(GD_DEP)
+
+else
+########################################################
+# Windows:
+Gsegraf1_rc.o: Gsegraf1.rc
+	windres --use-temp-file $(CXFLAGS) Gsegraf1.rc \
+	-o Gsegraf1_rc.o --define __WXMSW__ --define NOPCH
+
+# Windows:
+GGsegraf1.exe: $(GD_OBJ) Gsegraf1.cpp
+	$(CPP) $(CXFLAGS) $(NO_CONSOLE) -o $(EXEC)/$@ Gsegraf1.cpp $(GD_OBJ) \
+	$(WX_LIB) -lm 
+########################################################
+endif
+
+clear: clean
+
+clean: 
+	rm -f $(GD_OBJ) 
